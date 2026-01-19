@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live ISS Location - Multi-View Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <div class="container">
@@ -29,11 +29,11 @@
     </div>
 
     <!-- Load scripts in order -->
-    <script src="data-manager.js"></script>
-    <script src="raw-data-view.js"></script>
-    <script src="windowed-count-view.js"></script>
-    <script src="derived-metric-view.js"></script>
-    <script src="aggregated-position-view.js"></script>
+    <script src="js/data-manager.js"></script>
+    <script src="js/views/raw-data-view.js"></script>
+    <script src="js/views/windowed-count-view.js"></script>
+    <script src="js/views/derived-metric-view.js"></script>
+    <script src="js/views/aggregated-position-view.js"></script>
     <script>
         // Initialize views
         const rawDataView = new RawDataView('raw-data-view');
