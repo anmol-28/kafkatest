@@ -3,228 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live ISS Location</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-        }
-
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 30px;
-            font-size: 28px;
-            font-weight: 600;
-        }
-
-        .status {
-            margin-bottom: 20px;
-            padding: 10px;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .status.connected {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .status.disconnected {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        thead {
-            background-color: #3498db;
-            color: white;
-        }
-
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-        }
-
-        tbody tr {
-            transition: background-color 0.2s;
-        }
-
-        tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-
-        tbody tr.new-row {
-            animation: slideIn 0.3s ease;
-            background-color: #e8f5e9;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #7f8c8d;
-        }
-
-        .coordinate {
-            font-family: 'Courier New', monospace;
-            font-weight: 500;
-        }
-    </style>
+    <title>Live ISS Location - Multi-View Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <h1>Live ISS Location (Kafka + Flink Demo)</h1>
         <div id="status" class="status disconnected">Connecting to WebSocket...</div>
-        <div id="tableContainer">
-            <table id="locationTable">
-                <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>Latitude</th>
-                        <th>Longitude</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <tr>
-                        <td colspan="3" class="empty-state">Waiting for location data...</td>
-                    </tr>
-                </tbody>
-            </table>
+        
+        <!-- Tab Navigation -->
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-view="raw-data">Raw Data</button>
+                <button class="tab-button" data-view="windowed-count">Windowed Count</button>
+                <button class="tab-button" data-view="derived-metric">Derived Metrics</button>
+                <button class="tab-button" data-view="aggregated-position">Aggregated Position</button>
+            </div>
         </div>
+
+        <!-- View Containers -->
+        <div id="raw-data-view" class="view-container active"></div>
+        <div id="windowed-count-view" class="view-container"></div>
+        <div id="derived-metric-view" class="view-container"></div>
+        <div id="aggregated-position-view" class="view-container"></div>
     </div>
+
+    <!-- Load scripts in order -->
+    <script src="data-manager.js"></script>
+    <script src="raw-data-view.js"></script>
+    <script src="windowed-count-view.js"></script>
+    <script src="derived-metric-view.js"></script>
+    <script src="aggregated-position-view.js"></script>
     <script>
-        // WebSocket connection
-        let ws = null;
+        // Initialize views
+        const rawDataView = new RawDataView('raw-data-view');
+        const windowedCountView = new WindowedCountView('windowed-count-view');
+        const derivedMetricView = new DerivedMetricView('derived-metric-view');
+        const aggregatedPositionView = new AggregatedPositionView('aggregated-position-view');
+
+        // Current active view
+        let activeView = rawDataView;
+
+        // Tab button elements
+        const tabButtons = document.querySelectorAll('.tab-button');
         const statusDiv = document.getElementById('status');
-        const tableBody = document.getElementById('tableBody');
 
         /**
-         * Format timestamp for display
+         * Switch to a different view
          */
-        function formatTimestamp(timestamp) {
-            if (!timestamp) return 'N/A';
-            try {
-                const date = new Date(timestamp);
-                return date.toLocaleString();
-            } catch (e) {
-                return timestamp;
+        function switchView(viewName) {
+            // Hide all views
+            rawDataView.hide();
+            windowedCountView.hide();
+            derivedMetricView.hide();
+            aggregatedPositionView.hide();
+
+            // Remove active class from all tabs
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+
+            // Show selected view
+            switch(viewName) {
+                case 'raw-data':
+                    activeView = rawDataView;
+                    rawDataView.show();
+                    document.querySelector('[data-view="raw-data"]').classList.add('active');
+                    break;
+                case 'windowed-count':
+                    activeView = windowedCountView;
+                    windowedCountView.show();
+                    document.querySelector('[data-view="windowed-count"]').classList.add('active');
+                    break;
+                case 'derived-metric':
+                    activeView = derivedMetricView;
+                    derivedMetricView.show();
+                    document.querySelector('[data-view="derived-metric"]').classList.add('active');
+                    break;
+                case 'aggregated-position':
+                    activeView = aggregatedPositionView;
+                    aggregatedPositionView.show();
+                    document.querySelector('[data-view="aggregated-position"]').classList.add('active');
+                    break;
             }
         }
 
-        /**
-         * Add new row to table (inserts at top)
-         */
-        function addLocationRow(location) {
-            // Remove empty state if present
-            const emptyRow = tableBody.querySelector('.empty-state');
-            if (emptyRow) {
-                emptyRow.remove();
-            }
+        // Set up tab button click handlers
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const viewName = button.getAttribute('data-view');
+                switchView(viewName);
+            });
+        });
 
-            // Create new row
-            const row = document.createElement('tr');
-            row.className = 'new-row';
-            
-            row.innerHTML = `
-                <td>${formatTimestamp(location.eventTime || location.timestamp)}</td>
-                <td class="coordinate">${parseFloat(location.latitude).toFixed(4)}°</td>
-                <td class="coordinate">${parseFloat(location.longitude).toFixed(4)}°</td>
-            `;
+        // Register status callback
+        dataManager.onStatusUpdate((message, status) => {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${status}`;
+        });
 
-            // Insert at the top (after header)
-            tableBody.insertBefore(row, tableBody.firstChild);
+        // Register all views as listeners
+        dataManager.addListener((location) => {
+            rawDataView.onDataReceived(location);
+            windowedCountView.onDataReceived(location);
+            derivedMetricView.onDataReceived(location);
+            aggregatedPositionView.onDataReceived(location);
+        });
 
-            // Remove animation class after animation completes
-            setTimeout(() => {
-                row.classList.remove('new-row');
-            }, 300);
+        // Initialize WebSocket connection
+        dataManager.connectWebSocket();
 
-            // Keep only latest 100 rows
-            const rows = tableBody.querySelectorAll('tr');
-            if (rows.length > 100) {
-                rows[rows.length - 1].remove();
-            }
-        }
-
-        /**
-         * Connect to WebSocket
-         */
-        function connectWebSocket() {
-            const wsUrl = `ws://${window.location.host}/ws`;
-            ws = new WebSocket(wsUrl);
-
-            ws.onopen = () => {
-                console.log('WebSocket connected');
-                statusDiv.textContent = 'Connected - Receiving live data';
-                statusDiv.className = 'status connected';
-            };
-
-            ws.onmessage = (event) => {
-                try {
-                    const location = JSON.parse(event.data);
-                    addLocationRow(location);
-                } catch (error) {
-                    console.error('Error parsing WebSocket message:', error);
-                }
-            };
-
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                statusDiv.textContent = 'WebSocket error - Attempting to reconnect...';
-                statusDiv.className = 'status disconnected';
-            };
-
-            ws.onclose = () => {
-                console.log('WebSocket disconnected');
-                statusDiv.textContent = 'Disconnected - Attempting to reconnect...';
-                statusDiv.className = 'status disconnected';
-                
-                // Attempt to reconnect after 3 seconds
-                setTimeout(connectWebSocket, 3000);
-            };
-        }
-
-        // Connect on page load
-        connectWebSocket();
+        // Show initial view
+        rawDataView.show();
     </script>
 </body>
 </html>

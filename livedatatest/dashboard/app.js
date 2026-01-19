@@ -37,6 +37,30 @@ const server = http.createServer((req, res) => {
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(data);
         });
+    } else if (req.url.endsWith('.js')) {
+        // Serve JavaScript files
+        const filePath = path.join(__dirname, req.url);
+        fs.readFile(filePath, (err, data) => {
+            if (err) {
+                res.writeHead(404);
+                res.end('File not found');
+                return;
+            }
+            res.writeHead(200, { 'Content-Type': 'application/javascript' });
+            res.end(data);
+        });
+    } else if (req.url.endsWith('.css')) {
+        // Serve CSS files
+        const filePath = path.join(__dirname, req.url);
+        fs.readFile(filePath, (err, data) => {
+            if (err) {
+                res.writeHead(404);
+                res.end('File not found');
+                return;
+            }
+            res.writeHead(200, { 'Content-Type': 'text/css' });
+            res.end(data);
+        });
     } else {
         res.writeHead(404);
         res.end('Not found');
