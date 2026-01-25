@@ -315,12 +315,5 @@ ISC
 
 Anmol
 
-## 🔗 Related Links
-
-- [Open Notify API Documentation](http://open-notify.org/Open-Notify-API/ISS-Location-Now/)
-- [KafkaJS Documentation](https://kafka.js.org/)
-- [Apache Kafka Documentation](https://kafka.apache.org/documentation/)
-
----
 
 **Note:** This project is designed for demonstration purposes. For production use, consider adding authentication, rate limiting, and additional error handling.
